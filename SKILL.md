@@ -109,6 +109,45 @@ Two sibling folders, one pipeline:
                                           CapCut-side project's media/<rank>/overlays/
   ```
 
+## Beyond Top-N: the same technique applies to any Remotion piece
+
+The three-layer system below is specific to ranked countdown videos, but the underlying
+mechanic — render each visual piece from Remotion separately (opaque background, alpha-channel
+content pieces on top, alpha-channel persistent chrome like a logo), then assemble them as
+separate clips on separate CapCut tracks via `pycapcut` — generalizes to **any** Remotion piece a
+user wants to be able to edit in CapCut afterward, not just Top-N countdowns.
+
+**Worked example**: `channel-engine`'s aiw7 "AutomateSteps" reel (a single continuous narrated
+explainer, no ranked items, no b-roll footage) was decomposed by *beat* instead of by *rank*:
+- One opaque background clip (dot field + progress bar), full duration, its own track.
+- One clip per narrated beat (6 numbered scenes + the end card), alpha background, each sized to
+  exactly that beat's own spoken-line window and placed at its own start time — sequential clips
+  on one "content" track, each independently trimmable/reorderable/deletable in CapCut.
+- One alpha clip for the persistent logo mark, full duration, its own track (so it can be
+  repositioned without touching anything else).
+- Narration and each sfx cue as separate audio clips at their real offsets, not baked into a
+  single mixed track.
+- **Deliberately did NOT** try to extract each beat's on-screen caption as a separate native
+  CapCut text layer, even though that would be the most valuable single thing to make
+  independently editable. Reason: the heading and its content share one centred flex column whose
+  vertical split depends on both pieces' measured heights — reproducing that position by hand in
+  CapCut's text engine risked a visible drift between the (separately positioned) native text and
+  the (still Remotion-rendered) content beneath it. Keeping heading+content baked into one clip
+  per beat was the robust choice; treat "should captions be separately editable text" as a real
+  design question to raise with the user rather than a default, weighed against this risk.
+- Source component: see the "CapCut export" section at the bottom of
+  `channel-engine/src/doodle/aiw/AutomateSteps.tsx` (a set of thin wrapper components, one per
+  export target, each re-basing `useSec()` against the right absolute offset so the *same*
+  timing logic the main composition already uses stays the single source of truth) and
+  `channel-engine/scripts/render-aiw7-capcut-layers.mjs` (the batch-render script, same shape as
+  `render-overlays.mjs` below but organized by beat instead of by rank/slot).
+
+If a user asks to make an existing (non-countdown) Remotion piece "editable in CapCut," this is
+the pattern: identify the piece's own natural beats/sections, render background separately from
+content, keep persistent chrome (logos, watermarks) on its own track, and default to keeping each
+beat's text baked in with its visuals unless the position-drift risk above is clearly not a
+concern for that particular layout.
+
 ## Core technique: Remotion renders, CapCut assembles
 
 Two compositing modes — pick based on whether the piece needs to see through to footage:
