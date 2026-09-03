@@ -58,6 +58,27 @@ implies.
   `add_keyframe` on `alpha`/`position` for a manual fade or slide instead — that mechanism is
   proven to work.
 
+## Export-blocking Pro paywall on transitions
+
+`pycapcut`'s `add_transition(TransitionType.X, duration=...)` renders fine in the timeline and
+preview, but the specific transition asset can be **Pro-gated on the account CapCut is signed
+into** — and that gating shows up only at export time, not at build time or in the editor
+preview. Symptom: clicking Export shows a "Get Pro and save X to unlock these features" dialog
+listing every instance of the gated transition by timestamp, with only "Get free Pro" / "Get
+discount" / "Back to edit" as options — no free-tier or watermarked export path. In one observed
+case, `TransitionType.Flash` was gated, and checking the Transitions panel by hand (Basic and
+Classic categories both) showed *every* transition thumbnail carrying the same purple "Pro" gem
+badge — so this may not be a per-transition-type issue but a whole-catalog gate on some accounts.
+
+**Practical rule**: don't assume a transition type is free because it's simple/generic-sounding.
+Before relying on `add_transition()` in a build script meant to export without a paid
+subscription, actually open the real Export dialog on a build that uses it and confirm no
+paywall appears — checking the Transitions panel thumbnails for the Pro badge is a faster
+sanity check than a full export attempt. If gated, the safe fallback is to drop the transition
+and rely on `add_keyframe`-driven motion (scale/position zoom, fades via alpha) instead — those
+are confirmed not to trigger this paywall, since they're plain segment properties rather than a
+licensed effect asset.
+
 ## Timeline math
 
 All start/duration values must be **integer microseconds**, derived from one running cursor per
