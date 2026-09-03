@@ -92,12 +92,47 @@ back off the `VideoMaterial` object itself (after constructing it) for a full-le
 of truth per boundary" rule the parent SKILL.md's "Timeline math" section already states for
 scene-boundary math applies to whole-clip duration too.
 
-## Local draft filename seen in practice
+## A freshly-`save()`d draft can be silently un-openable — `draft_info.json` doesn't exist yet
 
-One real install (CapCut desktop, macOS) wrote `draft_content.json` as the per-draft JSON file,
-not `draft_info.json` as noted below — check the actual folder contents rather than assuming
-either name if you need to hand-edit a draft file directly; `pycapcut`'s own `Script_file` API
-doesn't care either way since it targets the internal schema, not a specific filename.
+`folder.create_draft(...)` + `script.save()` writes `draft_content.json` (confirmed: this is
+the file `pycapcut` actually writes on a from-scratch draft, not `draft_info.json`). But
+`root_meta_info.json`'s registry entry for that draft points `draft_json_file` at
+`.../draft_info.json` — a file that plain `pycapcut` never creates. Symptom: the draft shows up
+in CapCut's own project browser (so registration itself worked), but double-clicking it does
+**nothing at all** — no error dialog, it just silently fails to open. This is easy to misdiagnose
+as a stale-list/needs-relaunch issue (the tile also shows bogus `7.9K | 00:00`-style metadata,
+which looks like a caching problem) when the real cause is that the file it's told to open is
+missing.
+
+A project that has genuinely been opened by CapCut at least once (e.g. by hand, or by a build
+script from an earlier session that already went through this) has a real `draft_info.json` on
+disk alongside `draft_content.json`, plus a pile of other CapCut-managed files/folders
+(`Resources/`, `Timelines/`, `draft_cover.jpg`, `key_value.json`, etc.) that only get created by
+CapCut itself, never by `pycapcut`. There may be a first-open migration path inside CapCut that's
+supposed to read `draft_content.json` and generate all of this — but it can only run if CapCut
+can find an entry point in the first place, and the registry only points at `draft_info.json`.
+
+**Fix, confirmed working**: after `script.save()`, copy the file to also exist as
+`draft_info.json` in the same folder (`shutil.copy(draft_content.json, draft_info.json)` — same
+schema, just needs to exist under both names for the registry lookup to succeed). Also sync the
+duration into **two** separate cached locations that plain `save()` leaves at their
+`create_draft()`-time placeholder values (`draft_timeline_materials_size_: <tiny>` and
+`tm_duration: 0`), or the project browser tile keeps showing a bogus size/duration even after the
+`draft_info.json` fix:
+- `<draft>/draft_meta_info.json` → `tm_duration` (integer microseconds, same value as
+  `draft_content.json`'s top-level `duration`) and `draft_timeline_materials_size_` (real file
+  size in bytes, e.g. `os.path.getsize()` on the staged media)
+- the matching entry in `root_meta_info.json`'s `all_draft_store` array (**same field names
+  minus the trailing underscore**: `tm_duration`, `draft_timeline_materials_size`) — this one is
+  what the project-browser tile actually reads from, and it's a separate cached copy, not derived
+  from the per-draft file at display time.
+
+After patching both files, fully quit CapCut (`pkill -9 -f CapCut`) and relaunch before checking
+— it does not pick up on-disk changes to an already-loaded project list without a restart.
+
+Build this into any script that creates a draft via `create_draft()`+`save()` rather than doing
+it as a manual one-off patch: stage the copy and the two metadata syncs as the last step of the
+build, every run.
 
 ## Timeline math
 
