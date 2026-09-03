@@ -53,6 +53,14 @@ memory/HANDOFF.md:
 Keep the three-layer structure below as the organizing spine — it's what keeps this file
 navigable as it grows past one project's worth of lessons.
 
+This skill is a git repo pushed to `github.com/nadeemfarooqi/remotion-capcut-top10`. After
+editing this file (or `references/`), commit and push from
+`~/.claude/skills/remotion-capcut-top10`:
+```bash
+cd ~/.claude/skills/remotion-capcut-top10
+git add -A && git commit -m "describe what changed and why" && git push
+```
+
 ## Architecture
 
 Two sibling folders, one pipeline:
