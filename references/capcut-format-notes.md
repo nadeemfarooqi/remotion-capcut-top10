@@ -79,6 +79,26 @@ and rely on `add_keyframe`-driven motion (scale/position zoom, fades via alpha) 
 are confirmed not to trigger this paywall, since they're plain segment properties rather than a
 licensed effect asset.
 
+## `VideoMaterial.duration` is the source of truth, not `ffprobe`
+
+Building a Timerange from `ffprobe -show_entries format=duration` (rounded to microseconds) and
+handing it to `pycapcut.VideoSegment` can fail with "截取的素材时间范围 ... 超出了素材时长" (source
+timerange exceeds material duration) even though the numbers look like they should match — one
+observed case was off by 46μs (ffprobe: 47.680000s container `format=duration`; pycapcut's own
+probe: 47.634000s) on a plain h264+aac mp4. `format=duration` is the container-level duration
+tag, which can run slightly past the actual last decodable frame. Always read `material.duration`
+back off the `VideoMaterial` object itself (after constructing it) for a full-length segment's
+`Timerange`, rather than trusting an independently-computed ffprobe value — the same "one source
+of truth per boundary" rule the parent SKILL.md's "Timeline math" section already states for
+scene-boundary math applies to whole-clip duration too.
+
+## Local draft filename seen in practice
+
+One real install (CapCut desktop, macOS) wrote `draft_content.json` as the per-draft JSON file,
+not `draft_info.json` as noted below — check the actual folder contents rather than assuming
+either name if you need to hand-edit a draft file directly; `pycapcut`'s own `Script_file` API
+doesn't care either way since it targets the internal schema, not a specific filename.
+
 ## Timeline math
 
 All start/duration values must be **integer microseconds**, derived from one running cursor per
