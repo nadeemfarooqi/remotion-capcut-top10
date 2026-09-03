@@ -1,18 +1,22 @@
 ---
 name: remotion-capcut-top10
 description: >-
-  Playbook for building or extending a "Top N [category]" YouTube/social countdown video as a
-  real CapCut project draft (via the pycapcut Python library) with Remotion-rendered animated
-  overlays composited on top of it — a full-screen count-card rank reveal, small spec/stat
-  badges, and bigger bespoke feature illustrations. Use this whenever the user wants to build a
-  Top 10 (or Top N) countdown video from scratch, wants to add animated overlays, illustrations,
-  or a rank-reveal/countdown card to an existing CapCut-draft pipeline, mentions compositing
-  Remotion output into CapCut, references the reference projects at
-  /Users/nad/Desktop/camping-gadgets or /Users/nad/Desktop/gadget-videos, or asks to make a
-  countdown video's overlays "bigger", "more creative", "more illustrations", "more modern", or
-  "not boring" — trigger even if they don't say "CapCut" or "Remotion" by name, as long as the
-  context is a ranked/numbered product or item countdown video. This is a LIVING reference: keep
-  it updated (see "Keep this skill alive" below) every time a new illustration idea, gotcha, or
+  Two things this skill covers: (1) Playbook for building or extending a "Top N [category]"
+  YouTube/social countdown video as a real CapCut project draft (via the pycapcut Python
+  library) with Remotion-rendered animated overlays composited on top of it — a full-screen
+  count-card rank reveal, small spec/stat badges, and bigger bespoke feature illustrations. (2) A
+  general HOUSE RULE for pushing/sending/exporting ANY finished video (Remotion-rendered or
+  otherwise, Top-N or not) into CapCut — always build it as a real multi-track, per-beat editable
+  draft, never a flat single-clip import; see "Sending ANY video to CapCut" below, which applies
+  even outside a Top-N project. Trigger on: wanting to build a Top 10/Top N countdown video from
+  scratch; adding animated overlays, illustrations, or a rank-reveal card to an existing
+  CapCut-draft pipeline; referencing /Users/nad/Desktop/camping-gadgets or
+  /Users/nad/Desktop/gadget-videos; asking to make a countdown video's overlays "bigger", "more
+  creative", "more illustrations", "more modern", or "not boring" (even without saying "CapCut"
+  or "Remotion", as long as the context is a ranked/numbered item countdown); OR — independent of
+  all of the above — any request to "send/push/get/export/put this video/reel into CapCut" or
+  "make this editable in CapCut", for any project. This is a LIVING reference: keep it updated
+  (see "Keep this skill alive" below) every time a new illustration idea, gotcha, or
   user-corrected rule shows up in a real project.
 ---
 
@@ -33,6 +37,41 @@ are hard to debug and impossible for a non-engineer to nudge by hand. Assembling
 the real CapCut UI and nudge anything. Remotion still does the actual animation (CapCut's own
 motion tools are far more limited); it just renders to a clip that CapCut treats as regular
 footage. See "Core technique" below for exactly how that handoff works.
+
+## Sending ANY video to CapCut (house rule, applies outside Top-N too)
+
+**Whenever asked to send, push, export, or "get this into" CapCut — for any project, Top-N or
+not — the default is a real multi-track, per-beat editable draft, never a flat single-clip
+import of the finished mp4.** A flat import only lets someone trim the whole thing as one block;
+it defeats the entire reason this skill exists. Do this from the start, not as a fallback after
+the flat version turns out to be unsatisfying — that costs a whole extra build cycle
+(discovering the flat version doesn't satisfy "editable" is exactly what happened building the
+aiw7 "AutomateSteps" reel, and it shouldn't happen again for the next project).
+
+**The decomposition** (see "Beyond Top-N" below for the full worked example and reasoning):
+1. Identify the piece's own natural beats/sections (ranked items for a Top-N piece; scenes/beats
+   for anything else — a narrated explainer, a tutorial, whatever it is).
+2. Render the background separately (opaque) from the content (alpha) from any persistent chrome
+   like a logo/watermark (alpha, its own track, full duration).
+3. Render each beat's content as its own alpha clip, sized to and placed at that beat's own real
+   timing — one clip per beat on a shared "content" track, not one clip per micro-element (a whole
+   beat/scene/illustration is the right granularity, matching Layer 2/3's own granularity below).
+4. Keep each beat's on-screen caption/heading baked into that beat's own clip by default (see
+   "Beyond Top-N" for the position-drift reasoning) — ask the user before attempting to extract
+   captions as separately-editable native CapCut text, rather than defaulting to it.
+5. Narration and every sfx cue as separate audio clips at their real offsets, not one mixed track.
+
+**Always apply the two pycapcut gotchas from `references/capcut-format-notes.md`** as the last
+step of every build, not as a one-off patch after something looks broken: copy
+`draft_content.json` to also exist as `draft_info.json` in the draft folder, and sync
+`tm_duration`/the size field in both `draft_meta_info.json` and the matching
+`root_meta_info.json` registry entry. Skipping this produces a draft that appears in CapCut's
+project browser (looking like it worked) but silently fails to open, or shows a bogus
+size/duration on its tile — a real, confirmed failure mode, not a hypothetical one.
+
+Only skip the multi-track build and do a flat single-clip import if the user explicitly says
+that's all they want (e.g. "just get the finished video into CapCut so I can trim the ends") —
+confirm rather than assume if it's ambiguous which they mean.
 
 ## Keep this skill alive
 
